@@ -94,7 +94,13 @@ export default function ChatBox({ conversationId, initialMessages = [], onNewMes
           if (data === '[DONE]') continue
           try {
             const json = JSON.parse(data)
-            if (json.error) break
+            if (json.error) {
+              finalContent = `Erro: ${json.error}`
+              setMessages(prev => prev.map(m =>
+                m.id === streamingId ? { ...m, content: finalContent } : m
+              ))
+              break
+            }
             if (json.token) {
               finalContent += json.token
               riskLevel = json.risk_level
