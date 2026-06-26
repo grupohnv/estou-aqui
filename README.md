@@ -1,36 +1,84 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Estou Aqui
 
-## Getting Started
+Um companheiro espiritual inspirado nos ensinamentos de Jesus, criado para acolher você nos momentos de dor, dúvida, medo e solidão.
 
-First, run the development server:
+## Stack tecnológica
+
+- **Next.js 15** (App Router) com TypeScript
+- **Tailwind CSS v4**
+- **shadcn/ui** para componentes base
+- **Supabase** para autenticação e banco de dados (PostgreSQL)
+- **Anthropic Claude / OpenAI GPT-4o** como provedor de IA (configurável)
+- **date-fns** para formatação de datas em português
+- **lucide-react** para ícones
+
+## Instalação e execução
 
 ```bash
+# 1. Instalar dependências
+npm install
+
+# 2. Copiar e preencher as variáveis de ambiente
+cp .env.local.example .env.local
+# (ou edite o .env.local já criado)
+
+# 3. Rodar em desenvolvimento
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Acesse [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Configuração do Supabase
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+1. Crie um projeto em [supabase.com](https://supabase.com)
+2. Acesse o SQL Editor e execute o conteúdo de `supabase/schema.sql`
+3. Preencha no `.env.local`:
+   ```
+   NEXT_PUBLIC_SUPABASE_URL=https://seu-projeto.supabase.co
+   NEXT_PUBLIC_SUPABASE_ANON_KEY=sua-anon-key
+   SUPABASE_SERVICE_ROLE_KEY=sua-service-role-key
+   ```
 
-## Learn More
+## Configuração da IA
 
-To learn more about Next.js, take a look at the following resources:
+O app suporta Anthropic Claude (padrão) ou OpenAI GPT-4o.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```env
+# Para usar Claude (padrão):
+ANTHROPIC_API_KEY=sk-ant-...
+AI_PROVIDER=anthropic
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+# Para usar OpenAI:
+OPENAI_API_KEY=sk-...
+AI_PROVIDER=openai
+```
 
-## Deploy on Vercel
+## Páginas do app
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+| Rota | Descrição |
+|------|-----------|
+| `/` | Landing page |
+| `/chat` | Chat com o companheiro espiritual |
+| `/reflexao` | Reflexão diária com versículo e oração |
+| `/historico` | Histórico de conversas |
+| `/favoritos` | Mensagens marcadas como favoritas |
+| `/perfil` | Perfil do usuário |
+| `/pricing` | Planos de assinatura |
+| `/seguranca` | Segurança, limites e emergências |
+| `/login` | Login |
+| `/register` | Cadastro |
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Protocolo de segurança
+
+O app detecta automaticamente mensagens com risco elevado (palavras-chave relacionadas a suicídio, automutilação, violência) e instrui a IA a:
+
+- Acolher com urgência e cuidado
+- Informar que a vida da pessoa importa
+- Mencionar CVV (188) e emergências (192/190)
+- Orientar a buscar ajuda humana imediata
+
+## Observações
+
+- Pagamento/assinatura é mockado — os planos Premium e Família ainda não processam pagamento
+- Autenticação com Supabase requer configuração das variáveis de ambiente
+- O histórico e favoritos exibem dados mockados enquanto o Supabase não estiver configurado
