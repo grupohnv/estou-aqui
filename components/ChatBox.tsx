@@ -57,7 +57,7 @@ export default function ChatBox({ conversationId, initialMessages = [], onNewMes
     setLoading(true)
 
     const streamingId = (Date.now() + 1).toString()
-    let riskLevel: string | undefined
+    let riskLevel: import('@/types').RiskLevel | undefined
     let finalContent = ''
 
     try {
