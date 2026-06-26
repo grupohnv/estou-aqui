@@ -43,6 +43,11 @@ export async function POST(req: NextRequest) {
             }),
           })
 
+          if (!res.ok) {
+            const errText = await res.text()
+            throw new Error(`OpenAI error ${res.status}: ${errText}`)
+          }
+
           const reader = res.body!.getReader()
           const dec = new TextDecoder()
 
