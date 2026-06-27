@@ -49,13 +49,16 @@ export async function POST(req: NextRequest) {
           }
 
           const reader = res.body!.getReader()
-          const dec = new TextDecoder()
+          const dec = new TextDecoder('utf-8', { stream: true })
+          let serverLineBuffer = ''
 
           while (true) {
             const { done, value } = await reader.read()
             if (done) break
-            const chunk = dec.decode(value)
-            const lines = chunk.split('\n').filter(l => l.startsWith('data: '))
+            serverLineBuffer += dec.decode(value)
+            const allLines = serverLineBuffer.split('\n')
+            serverLineBuffer = allLines.pop() ?? ''
+            const lines = allLines.filter(l => l.trim().startsWith('data: '))
             for (const line of lines) {
               const data = line.slice(6)
               if (data === '[DONE]') continue
