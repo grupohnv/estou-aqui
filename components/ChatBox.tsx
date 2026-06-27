@@ -71,7 +71,7 @@ export default function ChatBox({ conversationId, initialMessages = [], onNewMes
       })
 
       const reader = res.body!.getReader()
-      const dec = new TextDecoder()
+      const dec = new TextDecoder('utf-8', { stream: true })
 
       // add empty streaming message
       setMessages(prev => [...prev, {
