@@ -3,7 +3,7 @@ import { useState, useRef, useEffect } from 'react'
 import { Send, Loader2, Sparkles } from 'lucide-react'
 import MessageBubble from './MessageBubble'
 import type { Message } from '@/types'
-import { WordBuffer, processResponse } from '@/lib/ai/responseQualityPipeline'
+import { processResponse } from '@/lib/ai/responseQualityPipeline'
 
 const QUICK_STARTERS = [
   'Estou com medo',
@@ -60,7 +60,7 @@ export default function ChatBox({ conversationId, initialMessages = [], onNewMes
     const streamingId = (Date.now() + 1).toString()
     let riskLevel: import('@/types').RiskLevel | undefined
     let finalContent = ''
-    const wordBuffer = new WordBuffer()
+    let lineBuffer = '' // acumula linhas SSE incompletas entre chunks
 
     try {
       const res = await fetch('/api/chat', {
@@ -89,37 +89,38 @@ export default function ChatBox({ conversationId, initialMessages = [], onNewMes
       while (true) {
         const { done, value } = await reader.read()
         if (done) break
-        const chunk = dec.decode(value)
-        const lines = chunk.split('\n').filter(l => l.startsWith('data: '))
+        lineBuffer += dec.decode(value)
+
+        // processa apenas linhas completas (terminadas em \n)
+        const lines = lineBuffer.split('\n')
+        lineBuffer = lines.pop() ?? '' // última linha pode estar incompleta
+
         for (const line of lines) {
-          const data = line.slice(6)
+          const trimmed = line.trim()
+          if (!trimmed.startsWith('data: ')) continue
+          const data = trimmed.slice(6)
           if (data === '[DONE]') continue
           try {
             const json = JSON.parse(data)
             if (json.error) {
-              finalContent = `Erro: ${json.error}`
+              finalContent = `Erro ao conectar com a IA. Tente novamente.`
               setMessages(prev => prev.map(m =>
                 m.id === streamingId ? { ...m, content: finalContent } : m
               ))
               break
             }
             if (json.token) {
-              const safe = wordBuffer.push(json.token)
-              if (safe) {
-                finalContent += safe
-                riskLevel = json.risk_level
-                setMessages(prev => prev.map(m =>
-                  m.id === streamingId ? { ...m, content: finalContent, risk_level: riskLevel } : m
-                ))
-              }
+              finalContent += json.token
+              riskLevel = json.risk_level
+              setMessages(prev => prev.map(m =>
+                m.id === streamingId ? { ...m, content: finalContent, risk_level: riskLevel } : m
+              ))
             }
           } catch {}
         }
       }
 
-      // flush remaining buffer and apply quality pipeline
-      const remaining = wordBuffer.flush()
-      if (remaining) finalContent += remaining
+      // aplica pipeline de qualidade apenas no texto final
       finalContent = processResponse(finalContent)
       setMessages(prev => prev.map(m =>
         m.id === streamingId ? { ...m, content: finalContent, risk_level: riskLevel } : m
