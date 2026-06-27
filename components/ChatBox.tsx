@@ -3,6 +3,7 @@ import { useState, useRef, useEffect } from 'react'
 import { Send, Loader2, Sparkles } from 'lucide-react'
 import MessageBubble from './MessageBubble'
 import type { Message } from '@/types'
+import { WordBuffer, processResponse } from '@/lib/ai/responseQualityPipeline'
 
 const QUICK_STARTERS = [
   'Estou com medo',
@@ -59,6 +60,7 @@ export default function ChatBox({ conversationId, initialMessages = [], onNewMes
     const streamingId = (Date.now() + 1).toString()
     let riskLevel: import('@/types').RiskLevel | undefined
     let finalContent = ''
+    const wordBuffer = new WordBuffer()
 
     try {
       const res = await fetch('/api/chat', {
@@ -102,15 +104,26 @@ export default function ChatBox({ conversationId, initialMessages = [], onNewMes
               break
             }
             if (json.token) {
-              finalContent += json.token
-              riskLevel = json.risk_level
-              setMessages(prev => prev.map(m =>
-                m.id === streamingId ? { ...m, content: finalContent, risk_level: riskLevel } : m
-              ))
+              const safe = wordBuffer.push(json.token)
+              if (safe) {
+                finalContent += safe
+                riskLevel = json.risk_level
+                setMessages(prev => prev.map(m =>
+                  m.id === streamingId ? { ...m, content: finalContent, risk_level: riskLevel } : m
+                ))
+              }
             }
           } catch {}
         }
       }
+
+      // flush remaining buffer and apply quality pipeline
+      const remaining = wordBuffer.flush()
+      if (remaining) finalContent += remaining
+      finalContent = processResponse(finalContent)
+      setMessages(prev => prev.map(m =>
+        m.id === streamingId ? { ...m, content: finalContent, risk_level: riskLevel } : m
+      ))
 
       const aiMsg: Message = {
         id: streamingId,
